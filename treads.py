@@ -86,7 +86,7 @@ class Que():
             for _ in range(n_thead):
                 Workers = Worker(que)
                 th = threading.Thread(target=Workers.worker, args=(), daemon=True)
-                #Que.read_video('is42.mp4')
+                #Worker.read_video('is42.mp4')
                 th.start()
 
             # Блокируем дальнейшее выполнение
