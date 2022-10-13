@@ -59,7 +59,7 @@ class Worker:
             # Получаем задание (имя файла) из очереди
             job = self.que.get(block=True, timeout=0.1)
             # открываем видео из очереди
-            Worker.read_video(str(job))
+            Worker.read_video(str(job)[3:])
             # Перемещаем файл из директории in в директорию out
             shutil.move(str(job), 'out/')
             # Сообщаем очереди что задача выполнена
@@ -86,7 +86,7 @@ class Que():
             for _ in range(n_thead):
                 Workers = Worker(que)
                 th = threading.Thread(target=Workers.worker, args=(), daemon=True)
-                #Worker.read_video('is42.mp4')
+                #Worker.read_video('is42.mp4123')
                 th.start()
 
             # Блокируем дальнейшее выполнение
