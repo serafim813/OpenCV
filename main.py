@@ -6,6 +6,7 @@ import sqlite3 as lite
 from sqlite import videos_table
 import os
 import pathlib
+import shutil
 
 
 def read_video(name):
@@ -48,6 +49,8 @@ def read_video(name):
     dir = 'Resources/Image_sequence/'
     for file in os.scandir(dir):
         os.remove(file.path)
+
+    shutil.move(name, 'out/')
     # Освободить объект захвата видео
     vid_capture.release()
     cv2.destroyAllWindows()
@@ -72,40 +75,44 @@ def calculate(func, args):
     return f'{proc_name}'
 
 
-def test():
-    if file_count < 10:
-        NUMBER_OF_PROCESSES = file_count
-    else:
-        NUMBER_OF_PROCESSES = 10
+class Que():
+    def __init__(self, list_files):
+        self.list_files = list_files  # список файлов
 
-    TASKS = [(read_video, i) for i in list_files]
+    def que(self):
+        if file_count < 10:
+            NUMBER_OF_PROCESSES = file_count
+        else:
+            NUMBER_OF_PROCESSES = 10
 
-    # Создание очередей
-    task_queue = multiprocessing.Queue()
-    done_queue = multiprocessing.Queue()
+        TASKS = [(read_video, i) for i in list_files]
 
-    # Заполнение очереди заданий
-    for task in TASKS:
-        task_queue.put(task)
+        # Создание очередей
+        task_queue = multiprocessing.Queue()
+        done_queue = multiprocessing.Queue()
 
-    # Запуск рабочих процессов
-    lock = Lock()
-    count = file_count
-    if count >= 1:
+        # Заполнение очереди заданий
+        for task in TASKS:
+            task_queue.put(task)
+
+        # Запуск рабочих процессов
+        lock = Lock()
+        count = file_count
+        if count >= 1:
+            for i in range(NUMBER_OF_PROCESSES):
+                multiprocessing.Process(target=worker, args=(lock, task_queue, done_queue)).start()
+            count -= 1
+        else:
+            print('Файлы не найдены.')
+        # Получение и печать результатов
+        print('TASKS:\n')
+        for i in range(len(TASKS)):
+            print('\t', done_queue.get())
+
+        # Говорим дочерним процессам остановиться
+        print('STOP.')
         for i in range(NUMBER_OF_PROCESSES):
-            multiprocessing.Process(target=worker, args=(lock, task_queue, done_queue)).start()
-        count -= 1
-    else:
-        print('Файлы не найдены.')
-    # Получение и печать результатов
-    print('TASKS:\n')
-    for i in range(len(TASKS)):
-        print('\t', done_queue.get())
-
-    # Говорим дочерним процессам остановиться
-    print('STOP.')
-    for i in range(NUMBER_OF_PROCESSES):
-        task_queue.put('STOP')
+            task_queue.put('STOP')
 
 
 if __name__ == '__main__':
@@ -120,4 +127,5 @@ if __name__ == '__main__':
     for file in list_files:
         file_count += 1
     list_files = path_dir.glob('*.mp4')
-    test()
+    test = Que(list_files)
+    test.que()
